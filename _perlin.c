@@ -1,6 +1,7 @@
+// -*- mode: c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4; -*-
+//
 // Copyright (c) 2008, Casey Duncan (casey dot duncan at gmail dot com)
 // see LICENSE.txt for details
-// $Id$
 
 #include "Python.h"
 #include <math.h>
@@ -43,7 +44,7 @@ py_noise1(PyObject *self, PyObject *args, PyObject *kwargs)
 	float x;
 	int octaves = 1;
 	float persistence = 0.5f;
-    float lacunarity = 2.0f;
+	float lacunarity = 2.0f;
 	int repeat = 1024; // arbitrary
 	int base = 0;
 
@@ -120,7 +121,7 @@ py_noise2(PyObject *self, PyObject *args, PyObject *kwargs)
 	float x, y;
 	int octaves = 1;
 	float persistence = 0.5f;
-    float lacunarity = 2.0f;
+	float lacunarity = 2.0f;
 	float repeatx = 1024; // arbitrary
 	float repeaty = 1024; // arbitrary
 	int base = 0;
@@ -170,7 +171,7 @@ noise3(float x, float y, float z, const int repeatx, const int repeaty, const in
 	int i = (int)floorf(fmodf(x, repeatx));
 	int j = (int)floorf(fmodf(y, repeaty));
 	int k = (int)floorf(fmodf(z, repeatz));
-	int ii = (int)fmodf(i + 1,  repeatx);
+	int ii = (int)fmodf(i + 1, repeatx);
 	int jj = (int)fmodf(j + 1, repeaty);
 	int kk = (int)fmodf(k + 1, repeatz);
 	i = (i & 255) + base;
@@ -208,7 +209,7 @@ py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
 	float x, y, z;
 	int octaves = 1;
 	float persistence = 0.5f;
-    float lacunarity = 2.0f;
+	float lacunarity = 2.0f;
 	int repeatx = 1024; // arbitrary
 	int repeaty = 1024; // arbitrary
 	int repeatz = 1024; // arbitrary
@@ -262,8 +263,8 @@ static PyMethodDef perlin_functions[] = {
 		"persistence -- specifies the amplitude of each successive octave relative\n"
 		"to the one below it. Defaults to 0.5 (each higher octave's amplitude\n"
 		"is halved). Note the amplitude of the first pass is always 1.0.\n\n"
-        "lacunarity -- specifies the frequency of each successive octave relative\n"
-        "to the one below it, similar to persistence. Defaults to 2.0.\n\n"
+		"lacunarity -- specifies the frequency of each successive octave relative\n"
+		"to the one below it, similar to persistence. Defaults to 2.0.\n\n"
 		"repeatx, repeaty, repeatz -- specifies the interval along each axis when \n"
 		"the noise values repeat. This can be used as the tile size for creating \n"
 		"tileable textures\n\n"
