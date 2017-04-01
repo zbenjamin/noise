@@ -5,6 +5,8 @@
 // see LICENSE.txt for details
 
 #include "Python.h"
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#include <numpy/arrayobject.h>
 #include <math.h>
 #include <float.h>
 #include "_noise.h"
@@ -375,6 +377,162 @@ py_noise4(PyObject *self, PyObject *args, PyObject *kwargs)
 	}
 }
 
+static PyObject *
+py_noise3_vec(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+	PyObject* xs;
+	PyObject* ys;
+	PyObject* zs;
+	int octaves = 1;
+	float persistence = 0.5f;
+	float lacunarity = 2.0f;
+
+	NpyIter *iter;
+	NpyIter_IterNextFunc *iternext;
+	PyArrayObject *ret = NULL;
+	PyArrayObject *op[4] = {NULL, NULL, NULL, NULL};
+	npy_uint32 op_flags[4];
+	PyArray_Descr *op_dtypes[4];
+	PyArray_Descr *float_type = NULL;
+	npy_intp *sizeptr, *strides;
+	char **dataptrarray;
+
+	static char *kwlist[] = {"xs", "ys", "zs", "octaves", "persistence", "lacunarity", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOO|iff:snoise3_vec",
+									 kwlist, &xs, &ys, &zs, &octaves, &persistence,
+									 &lacunarity))
+		goto fail;
+
+	op[0] = (PyArrayObject*) PyArray_FROM_O(xs);
+	op[1] = (PyArrayObject*) PyArray_FROM_O(ys);
+	op[2] = (PyArrayObject*) PyArray_FROM_O(zs);
+	op[3] = NULL;
+	op_flags[0] = NPY_ITER_READONLY;
+	op_flags[1] = NPY_ITER_READONLY;
+	op_flags[2] = NPY_ITER_READONLY;
+	op_flags[3] = NPY_ITER_WRITEONLY | NPY_ITER_ALLOCATE;
+	float_type = PyArray_DescrFromType(NPY_FLOAT);
+	op_dtypes[0] = float_type;
+	op_dtypes[1] = float_type;
+	op_dtypes[2] = float_type;
+	op_dtypes[3] = float_type;
+
+	if (op[0] == NULL) {
+		PyErr_SetString(PyExc_ValueError, "Could not convert argument `xs` to an array of floats");
+		goto fail;
+	}
+	if (op[1] == NULL) {
+		PyErr_SetString(PyExc_ValueError, "Could not convert argument `ys` to an array of floats");
+		goto fail;
+	}
+	if (op[2] == NULL) {
+		PyErr_SetString(PyExc_ValueError, "Could not convert argument `zs` to an array of floats");
+		goto fail;
+	}
+
+	iter = NpyIter_MultiNew(4, op, NPY_ITER_EXTERNAL_LOOP | NPY_ITER_BUFFERED,
+							NPY_KEEPORDER, NPY_SAME_KIND_CASTING,
+							op_flags, op_dtypes);
+
+	if (iter == NULL) {
+		goto fail;
+	}
+
+	iternext = NpyIter_GetIterNext(iter, NULL);
+	strides = NpyIter_GetInnerStrideArray(iter);
+	sizeptr = NpyIter_GetInnerLoopSizePtr(iter);
+	dataptrarray = NpyIter_GetDataPtrArray(iter);
+
+	do {
+		npy_intp size = *sizeptr;
+		float *x, *y, *z, *result;
+		int iop;
+
+		while (size--) {
+			x = (float*) dataptrarray[0];
+			y = (float*) dataptrarray[1];
+			z = (float*) dataptrarray[2];
+			result = (float*) dataptrarray[3];
+			*result = noise3(*x, *y, *z);
+			for (iop = 0; iop < 4; ++iop) {
+				dataptrarray[iop] += strides[iop];
+			}
+		}
+	} while (iternext(iter));
+
+	ret = NpyIter_GetOperandArray(iter)[3];
+	Py_INCREF(ret);
+
+	if (NpyIter_Deallocate(iter) != NPY_SUCCEED) {
+		goto fail;
+	}
+
+	Py_DECREF(float_type);
+	Py_DECREF(op[0]);
+	Py_DECREF(op[1]);
+	Py_DECREF(op[2]);
+
+	return PyArray_Return(ret);
+
+fail:
+	Py_XDECREF(float_type);
+	Py_XDECREF(op[0]);
+	Py_XDECREF(op[1]);
+	Py_XDECREF(op[2]);
+	Py_XDECREF(ret);
+	return NULL;
+}
+
+static PyObject *
+py_noise3_coords(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+	PyObject* retvals;
+	PyObject* coords;
+	PyObject* coords_list;
+	PyObject** coords_items;
+	Py_ssize_t num_coords;
+	int octaves = 1;
+	float persistence = 0.5f;
+	float lacunarity = 2.0f;
+
+	static char *kwlist[] = {"coords", "octaves", "persistence", "lacunarity", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iff:snoise3_coords",
+									 kwlist, &coords, &octaves, &persistence,
+									 &lacunarity))
+		return NULL;
+
+	// TODO: Check coords type
+	coords_list = PySequence_Fast(coords, "coords argument must support iteration");
+	coords_items = PySequence_Fast_ITEMS(coords_list);
+	num_coords = PySequence_Fast_GET_SIZE(coords_list);
+	retvals = PyList_New(num_coords);
+
+	if (octaves == 1) {
+		Py_ssize_t i;
+		for (i = 0; i < num_coords; ++i) {
+			PyObject* elem = coords_items[i];
+			PyObject* elem_list = PySequence_Fast(elem, "elements of coords argument must support iteration");
+			float x, y, z;
+			// TODO: Check length of elements
+			x = PyFloat_AS_DOUBLE(PySequence_Fast_GET_ITEM(elem_list, 0));
+			y = PyFloat_AS_DOUBLE(PySequence_Fast_GET_ITEM(elem_list, 1));
+			z = PyFloat_AS_DOUBLE(PySequence_Fast_GET_ITEM(elem_list, 2));
+			double result = (double) noise3(x, y, z);
+			PyList_SET_ITEM(retvals, i, PyFloat_FromDouble(result));
+		}
+		// Single octave, return simple noise
+		return retvals;
+	/* } else if (octaves > 1) { */
+	/* 	return (PyObject *) PyFloat_FromDouble( */
+	/* 		(double) fbm_noise3(x, y, z, octaves, persistence, lacunarity)); */
+	} else {
+		PyErr_SetString(PyExc_ValueError, "Expected octaves value > 0");
+		return NULL;
+	}
+}
+
 static PyMethodDef simplex_functions[] = {
 	{"noise2", (PyCFunction)py_noise2, METH_VARARGS | METH_KEYWORDS,
 		"noise2(x, y, octaves=1, persistence=0.5, lacunarity=2.0, repeatx=None, repeaty=None, base=0.0) "
@@ -408,6 +566,9 @@ static PyMethodDef simplex_functions[] = {
 		"is halved). Note the amplitude of the first pass is always 1.0.\n\n"
         "lacunarity -- specifies the frequency of each successive octave relative\n"
         "to the one below it, similar to persistence. Defaults to 2.0."},
+	// TODO: docs
+	{"noise3_coords", (PyCFunction)py_noise3_coords, METH_VARARGS | METH_KEYWORDS},
+	{"noise3_vec", (PyCFunction)py_noise3_vec, METH_VARARGS | METH_KEYWORDS},
 	{NULL}
 };
 
@@ -438,6 +599,7 @@ PyInit__simplex(void)
 void
 init_simplex(void)
 {
+	import_array();
 	Py_InitModule3("_simplex", simplex_functions, module_doc);
 }
 
