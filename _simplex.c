@@ -412,6 +412,11 @@ py_noise3_vec(PyObject *self, PyObject *args, PyObject *kwargs)
 									 &lacunarity))
 		goto fail;
 
+	if (octaves <= 0) {
+		PyErr_SetString(PyExc_ValueError, "Expected octaves value > 0");
+		return NULL;
+	}
+
 	op[0] = (PyArrayObject*) PyArray_FROM_O(xs);
 	op[1] = (PyArrayObject*) PyArray_FROM_O(ys);
 	op[2] = (PyArrayObject*) PyArray_FROM_O(zs);
@@ -462,7 +467,7 @@ py_noise3_vec(PyObject *self, PyObject *args, PyObject *kwargs)
 			y = (float*) dataptrarray[1];
 			z = (float*) dataptrarray[2];
 			result = (float*) dataptrarray[3];
-			*result = noise3(*x, *y, *z);
+			*result = dispatch_noise3(*x, *y, *z, octaves, persistence, lacunarity);
 			for (iop = 0; iop < 4; ++iop) {
 				dataptrarray[iop] += strides[iop];
 			}
