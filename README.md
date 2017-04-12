@@ -1,6 +1,6 @@
 Native-code and shader implementations of Perlin noise for Python
 
-By Casey Duncan <casey dot duncan at gmail dot com>
+By Casey Duncan &lt;casey dot duncan at gmail dot com&gt;
 
 This package is designed to give you simple to use, fast functions for
 generating Perlin noise in your Python programs. Perlin noise is famously
@@ -32,7 +32,9 @@ convenient generation of turbulent noise in shaders are also included.
 
 Installation uses the standard Python distutils regime:
 
+```
 python setup.py install
+```
 
 This will compile and install the noise package into your Python site
 packages.
@@ -40,8 +42,10 @@ packages.
 The functions and their signatures are documented in their respective
 docstrings.  Use the Python help() function to read them.
 
->>> import noise 
+```
+>>> import noise
 >>> help(noise)
+```
 
 The examples directory contains sample programs using the noise functions.
 
