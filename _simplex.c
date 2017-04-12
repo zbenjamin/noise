@@ -1,6 +1,7 @@
 // -*- mode: c; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4; -*-
 //
 // Copyright (c) 2008, Casey Duncan (casey dot duncan at gmail dot com)
+// Copyright (c) 2017, Zev Benjamin <zev@strangersgate.com>
 // see LICENSE.txt for details
 
 #include "Python.h"
