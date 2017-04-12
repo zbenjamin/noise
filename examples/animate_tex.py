@@ -9,8 +9,8 @@ import math
 import pyglet
 from pyglet.gl import *
 import ctypes
-import noise
-from noise import pnoise3, snoise3
+import vec_noise
+from vec_noise import pnoise3, snoise3
 
 def create_3d_texture(width, scale):
 	"""Create a grayscale 3d texture map with the specified 

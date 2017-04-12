@@ -6,7 +6,7 @@ http://http.developer.nvidia.com/GPUGems/gpugems_ch05.html
 
 __version__ = "$Id: shader_noise.py 37 2008-06-27 22:25:39Z casey.duncan $"
 
-from noise import pnoise3
+from vec_noise import pnoise3
 import ctypes
 from pyglet.gl import *
 

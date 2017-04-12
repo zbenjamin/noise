@@ -4,7 +4,7 @@
 # $Id: 2dtexture.py 21 2008-05-21 07:52:29Z casey.duncan $
 
 import sys
-from noise import pnoise2, snoise2
+from vec_noise import pnoise2, snoise2
 
 if len(sys.argv) not in (2, 3) or '--help' in sys.argv or '-h' in sys.argv:
 	print('2dtexture.py FILE [OCTAVES]')

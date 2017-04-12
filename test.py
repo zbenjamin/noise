@@ -4,14 +4,14 @@ import unittest
 class PerlinTestCase(unittest.TestCase):
 
     def test_perlin_1d_range(self):
-        from noise import pnoise1
+        from vec_noise import pnoise1
         for i in range(-10000, 10000):
             x = i * 0.49
             n = pnoise1(x)
             self.assertTrue(-1.0 <= n <= 1.0, (x, n))
 
     def test_perlin_1d_octaves_range(self):
-        from noise import pnoise1
+        from vec_noise import pnoise1
         for i in range(-1000, 1000):
             for o in range(10):
                 x = i * 0.49
@@ -19,13 +19,13 @@ class PerlinTestCase(unittest.TestCase):
                 self.assertTrue(-1.0 <= n <= 1.0, (x, n))
 
     def test_perlin_1d_base(self):
-        from noise import pnoise1
+        from vec_noise import pnoise1
         self.assertEqual(pnoise1(0.5), pnoise1(0.5, base=0))
         self.assertNotEqual(pnoise1(0.5), pnoise1(0.5, base=5))
         self.assertNotEqual(pnoise1(0.5, base=5), pnoise1(0.5, base=1))
 
     def test_perlin_2d_range(self):
-        from noise import pnoise2
+        from vec_noise import pnoise2
         for i in range(-10000, 10000):
             x = i * 0.49
             y = -i * 0.67
@@ -33,7 +33,7 @@ class PerlinTestCase(unittest.TestCase):
             self.assertTrue(-1.0 <= n <= 1.0, (x, y, n))
 
     def test_perlin_2d_octaves_range(self):
-        from noise import pnoise2
+        from vec_noise import pnoise2
         for i in range(-1000, 1000):
             for o in range(10):
                 x = -i * 0.49
@@ -42,14 +42,14 @@ class PerlinTestCase(unittest.TestCase):
                 self.assertTrue(-1.0 <= n <= 1.0, (x, n))
 
     def test_perlin_2d_base(self):
-        from noise import pnoise2
+        from vec_noise import pnoise2
         x, y = 0.73, 0.27
         self.assertEqual(pnoise2(x, y), pnoise2(x, y, base=0))
         self.assertNotEqual(pnoise2(x, y), pnoise2(x, y, base=5))
         self.assertNotEqual(pnoise2(x, y, base=5), pnoise2(x, y, base=1))
 
     def test_perlin_3d_range(self):
-        from noise import pnoise3
+        from vec_noise import pnoise3
         for i in range(-10000, 10000):
             x = -i * 0.49
             y = i * 0.67
@@ -58,7 +58,7 @@ class PerlinTestCase(unittest.TestCase):
             self.assertTrue(-1.0 <= n <= 1.0, (x, y, z, n))
 
     def test_perlin_3d_octaves_range(self):
-        from noise import pnoise3
+        from vec_noise import pnoise3
         for i in range(-1000, 1000):
             x = i * 0.22
             y = -i * 0.77
@@ -68,7 +68,7 @@ class PerlinTestCase(unittest.TestCase):
                 self.assertTrue(-1.0 <= n <= 1.0, (x, y, z, n))
 
     def test_perlin_3d_base(self):
-        from noise import pnoise3
+        from vec_noise import pnoise3
         x, y, z = 0.1, 0.7, 0.33
         self.assertEqual(pnoise3(x, y, z), pnoise3(x, y, z, base=0))
         self.assertNotEqual(pnoise3(x, y, z), pnoise3(x, y, z, base=5))
@@ -78,7 +78,7 @@ class PerlinTestCase(unittest.TestCase):
 class SimplexTestCase(unittest.TestCase):
 
     def test_simplex_2d_range(self):
-        from noise import snoise2
+        from vec_noise import snoise2
         for i in range(-10000, 10000):
             x = i * 0.49
             y = -i * 0.67
@@ -86,7 +86,7 @@ class SimplexTestCase(unittest.TestCase):
             self.assertTrue(-1.0 <= n <= 1.0, (x, y, n))
 
     def test_simplex_2d_octaves_range(self):
-        from noise import snoise2
+        from vec_noise import snoise2
         for i in range(-1000, 1000):
             for o in range(10):
                 x = -i * 0.49
@@ -95,7 +95,7 @@ class SimplexTestCase(unittest.TestCase):
                 self.assertTrue(-1.0 <= n <= 1.0, (x, n))
 
     def test_simplex_3d_range(self):
-        from noise import snoise3
+        from vec_noise import snoise3
         for i in range(-10000, 10000):
             x = i * 0.31
             y = -i * 0.7
@@ -104,7 +104,7 @@ class SimplexTestCase(unittest.TestCase):
             self.assertTrue(-1.0 <= n <= 1.0, (x, y, z, n))
 
     def test_simplex_3d_octaves_range(self):
-        from noise import snoise3
+        from vec_noise import snoise3
         for i in range(-1000, 1000):
             x = -i * 0.12
             y = i * 0.55
@@ -114,7 +114,7 @@ class SimplexTestCase(unittest.TestCase):
                 self.assertTrue(-1.0 <= n <= 1.0, (x, y, z, o+1, n))
 
     def test_simplex_4d_range(self):
-        from noise import snoise4
+        from vec_noise import snoise4
         for i in range(-10000, 10000):
             x = i * 0.88
             y = -i * 0.11
@@ -124,7 +124,7 @@ class SimplexTestCase(unittest.TestCase):
             self.assertTrue(-1.0 <= n <= 1.0, (x, y, z, w, n))
 
     def test_simplex_4d_octaves_range(self):
-        from noise import snoise4
+        from vec_noise import snoise4
         for i in range(-1000, 1000):
             x = -i * 0.12
             y = i * 0.55

@@ -15,7 +15,7 @@ import math
 import pyglet
 from pyglet.gl import *
 import ctypes
-from noise import pnoise2
+from vec_noise import pnoise2
 
 TEXTURE_SIZE = 512
 
