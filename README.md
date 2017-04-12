@@ -25,7 +25,7 @@ here: http://www.noisemachine.com/talk1/
 An excellent discussion of simplex noise can be found here:
 http://zach.in.tu-clausthal.de/teaching/cg2_08/literatur/simplexnoise.pdf
 
-The noise library includes native-code implementations of Perlin "improved"
+The vec_noise library includes native-code implementations of Perlin "improved"
 noise and Perlin simplex noise. It also includes a fast implementation of
 Perlin noise in GLSL, for use in OpenGL shaders. The shader code and many of
 the included examples require Pyglet (http://www.pyglet.org), the native-code
@@ -52,8 +52,8 @@ The functions and their signatures are documented in their respective
 docstrings.  Use the Python help() function to read them.
 
 ```
->>> import noise
->>> help(noise)
+>>> import vec_noise
+>>> help(vec_noise)
 ```
 
 The examples directory contains sample programs using the noise functions.

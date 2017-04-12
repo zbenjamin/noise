@@ -12,8 +12,8 @@ import math
 import pyglet
 from pyglet.gl import *
 import ctypes
-from noise.shader_noise import ShaderNoiseTexture, shader_noise_glsl
-from noise import shader
+from vec_noise.shader_noise import ShaderNoiseTexture, shader_noise_glsl
+from vec_noise import shader
 
 vert_shader = shader.VertexShader('vertex', '''
 	/* simple vertex shader that stores the vertex position, normal
