@@ -11,6 +11,33 @@
 #include <float.h>
 #include "_noise.h"
 
+typedef struct _NoiseArgs NoiseArgs;
+
+typedef PyObject* (*ScalarFunc)(NoiseArgs* args);
+typedef float (*DispatchFunc)(NoiseArgs* args, char **coord);
+
+typedef struct _NoiseArgs {
+	int ndims;
+	int nops;
+	//  dim_vals is an array of the form [xs, ys, ...]
+	PyObject **dim_vals;
+	PyArrayObject **op;
+	npy_uint32 *op_flags;
+	PyArray_Descr **op_dtypes;
+
+	ScalarFunc scalar_func;
+	DispatchFunc dispatch_func;
+
+	int octaves;
+	float persistence;
+	float lacunarity;
+
+	// Only used for noise2
+	float repeatx;
+	float repeaty;
+	float z;
+} NoiseArgs;
+
 // 2D simplex skew factors
 #define F2 0.3660254037844386f  // 0.5 * (sqrt(3.0) - 1.0)
 #define G2 0.21132486540518713f // (3.0 - sqrt(3.0)) / 6.0
@@ -329,6 +356,15 @@ dispatch_noise4(float x, float y, float z, float w, int octaves,
 	}
 }
 
+static float
+dispatch_noise3_args(NoiseArgs *args, char **coord)
+{
+	return dispatch_noise3(*((float*) coord[0]),
+						   *((float*) coord[1]),
+						   *((float*) coord[2]),
+						   args->octaves, args->persistence, args->lacunarity);
+}
+
 static PyObject *
 py_noise2(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -411,8 +447,7 @@ fail_x:
 }
 
 static PyObject *
-noise3_scalar(PyObject *x, PyObject *y, PyObject *z,
-			  int octaves, float persistence, float lacunarity)
+noise3_scalar(NoiseArgs *args)
 {
 	PyObject* fx = NULL;
 	PyObject* fy = NULL;
@@ -420,22 +455,23 @@ noise3_scalar(PyObject *x, PyObject *y, PyObject *z,
 	PyObject* result = NULL;
 	float fresult;
 
-	fx = PyNumber_Float(x);
+	fx = PyNumber_Float(args->dim_vals[0]);
 	if (fx == NULL)
 		goto fail_x;
 
-	fy = PyNumber_Float(y);
+	fy = PyNumber_Float(args->dim_vals[1]);
 	if (fy == NULL)
 		goto fail_y;
 
-	fz = PyNumber_Float(z);
+	fz = PyNumber_Float(args->dim_vals[2]);
 	if (fz == NULL)
 		goto fail_z;
 
 	fresult = dispatch_noise3((float) PyFloat_AsDouble(fx),
 							  (float) PyFloat_AsDouble(fy),
 							  (float) PyFloat_AsDouble(fz),
-							  octaves, persistence, lacunarity);
+							  args->octaves, args->persistence,
+							  args->lacunarity);
 	result = (PyObject*) PyFloat_FromDouble(fresult);
 
 	Py_DECREF(fz);
@@ -492,78 +528,52 @@ fail_x:
 	return result;
 }
 
-static inline int
-_noise_common_init(int op_len, PyArrayObject **op, npy_uint32 *op_flags,
-				   PyArray_Descr **op_dtypes, PyArray_Descr *float_type,
-				   PyObject** coords)
+static inline PyObject *
+py_noise_common(NoiseArgs* args)
 {
 	static char *var_names[4] = {"xs", "ys", "zs", "ws"};
 
-	for (int i = 0; i < op_len - 1; i++) {
-		op[i] = (PyArrayObject*) PyArray_FROM_O(coords[i]);
-		if (op[i] == NULL) {
-			PyErr_Format(PyExc_ValueError,
-						 "Could not convert argument `%s` to an array of floats",
-						 var_names[i]);
-			return -1;
-		}
-		op_flags[i] = NPY_ITER_READONLY;
-		op_dtypes[i] = float_type;
-	}
-	op[op_len] = NULL;
-	op_flags[op_len] = NPY_ITER_WRITEONLY | NPY_ITER_ALLOCATE;
-	op_dtypes[op_len] = float_type;
-
-	return 0;
-}
-
-static PyObject *
-py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-	PyObject* xs;
-	PyObject* ys;
-	PyObject* zs;
-	int octaves = 1;
-	float persistence = 0.5f;
-	float lacunarity = 2.0f;
-
+	int i;
+	int all_scalars = 0;
 	NpyIter *iter;
 	NpyIter_IterNextFunc *iternext;
 	PyArrayObject *ret = NULL;
-	PyArrayObject *op[4] = {NULL, NULL, NULL, NULL};
-	npy_uint32 op_flags[4];
-	PyArray_Descr *op_dtypes[4];
 	PyArray_Descr *float_type = NULL;
 	npy_intp *sizeptr, *strides;
 	char **dataptrarray;
 
-	static char *kwlist[] = {"xs", "ys", "zs", "octaves", "persistence", "lacunarity", NULL};
-
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOO|iff:snoise3_vec",
-									 kwlist, &xs, &ys, &zs, &octaves, &persistence,
-									 &lacunarity))
-		goto fail;
-
-	PyObject* coords[3] = {xs, ys, zs};
-
-	if (octaves <= 0) {
+	if (args->octaves <= 0) {
 		PyErr_SetString(PyExc_ValueError, "Expected octaves value > 0");
 		return NULL;
 	}
 
-	if (PyArray_IsPythonScalar(xs) && PyArray_IsPythonScalar(ys)
-		&& PyArray_IsPythonScalar(zs))
-	{
-		return noise3_scalar(xs, ys, zs, octaves, persistence, lacunarity);
+	for (i = 0; i < args->ndims; i++) {
+		all_scalars += PyArray_IsPythonScalar(args->dim_vals[i]);
 	}
+	if (all_scalars)
+		return args->scalar_func(args);
 
 	float_type = PyArray_DescrFromType(NPY_FLOAT);
-	if (_noise_common_init(3, op, op_flags, op_dtypes, float_type, coords) < 0)
-		goto fail;
 
-	iter = NpyIter_MultiNew(4, op, NPY_ITER_EXTERNAL_LOOP | NPY_ITER_BUFFERED,
+	for (i = 0; i < args->ndims; i++) {
+		args->op[i] = (PyArrayObject*) PyArray_FROM_O(args->dim_vals[i]);
+		if (args->op[i] == NULL) {
+			PyErr_Format(PyExc_ValueError,
+						 "Could not convert argument `%s` to an array of floats",
+						 var_names[i]);
+			goto fail;
+		}
+		args->op_flags[i] = NPY_ITER_READONLY;
+		args->op_dtypes[i] = float_type;
+	}
+	args->op[args->nops - 1] = NULL;
+	args->op_flags[args->nops - 1] = NPY_ITER_WRITEONLY | NPY_ITER_ALLOCATE;
+	args->op_dtypes[args->nops - 1] = float_type;
+
+	iter = NpyIter_MultiNew(args->nops, args->op,
+							NPY_ITER_EXTERNAL_LOOP | NPY_ITER_BUFFERED,
 							NPY_KEEPORDER, NPY_SAME_KIND_CASTING,
-							op_flags, op_dtypes);
+							args->op_flags, args->op_dtypes);
 
 	if (iter == NULL) {
 		goto fail;
@@ -576,22 +586,19 @@ py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
 
 	do {
 		npy_intp size = *sizeptr;
-		float *x, *y, *z, *result;
+		float *result;
 		int iop;
 
 		while (size--) {
-			x = (float*) dataptrarray[0];
-			y = (float*) dataptrarray[1];
-			z = (float*) dataptrarray[2];
-			result = (float*) dataptrarray[3];
-			*result = dispatch_noise3(*x, *y, *z, octaves, persistence, lacunarity);
-			for (iop = 0; iop < 4; ++iop) {
+			result = (float*) dataptrarray[args->nops - 1];
+			*result = args->dispatch_func(args, dataptrarray);
+			for (iop = 0; iop < args->nops; ++iop) {
 				dataptrarray[iop] += strides[iop];
 			}
 		}
 	} while (iternext(iter));
 
-	ret = NpyIter_GetOperandArray(iter)[3];
+	ret = NpyIter_GetOperandArray(iter)[args->nops - 1];
 	Py_INCREF(ret);
 
 	if (NpyIter_Deallocate(iter) != NPY_SUCCEED) {
@@ -599,19 +606,55 @@ py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
 	}
 
 	Py_DECREF(float_type);
-	Py_DECREF(op[0]);
-	Py_DECREF(op[1]);
-	Py_DECREF(op[2]);
+	// Don't deallocate the output array
+	for (i = 0; i < args->ndims; i++) {
+		Py_DECREF(args->op[i]);
+	}
 
 	return PyArray_Return(ret);
 
 fail:
 	Py_XDECREF(float_type);
-	Py_XDECREF(op[0]);
-	Py_XDECREF(op[1]);
-	Py_XDECREF(op[2]);
+	// Do deallocate the output array
+	for (i = 0; i < args->nops; i++) {
+		Py_XDECREF(args->op[i]);
+	}
 	Py_XDECREF(ret);
 	return NULL;
+}
+
+static PyObject *
+py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+	PyObject* dim_vals[3] = {NULL, NULL, NULL};
+	PyArrayObject *op[4] = {NULL, NULL, NULL, NULL};
+	npy_uint32 op_flags[4];
+	PyArray_Descr *op_dtypes[4];
+
+	NoiseArgs nargs = {
+		3,
+		4,
+		dim_vals,
+		op,
+		op_flags,
+		op_dtypes,
+		noise3_scalar,
+		dispatch_noise3_args,
+		1,
+		0.5f,
+		2.0f
+	};
+
+	static char *kwlist[] = {"xs", "ys", "zs", "octaves", "persistence", "lacunarity", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOO|iff:snoise3",
+									 kwlist,
+									 &dim_vals[0], &dim_vals[1], &dim_vals[2],
+									 &nargs.octaves, &nargs.persistence,
+									 &nargs.lacunarity))
+		return NULL;
+
+	return py_noise_common(&nargs);
 }
 
 #define SIMPLEX_COMMON_DOCS \
