@@ -257,7 +257,55 @@ fbm_noise4(float x, float y, float z, float w, int octaves, float persistence, f
 }
 
 static float
-dispatch_noise3(float x, float y, float z, int octaves, float persistence, float lacunarity)
+dispatch_noise2(float x, float y, int octaves, float persistence,
+                float lacunarity, float repeatx, float repeaty, float z)
+{
+    if (repeatx == FLT_MAX && repeaty == FLT_MAX) {
+        // Flat noise, no tiling
+        float freq = 1.0f;
+        float amp = 1.0f;
+        float max = 1.0f;
+        float total = noise2(x + z, y + z);
+        int i;
+
+        for (i = 1; i < octaves; i++) {
+            freq *= lacunarity;
+            amp *= persistence;
+            max += amp;
+            total += noise2(x * freq + z, y * freq + z) * amp;
+        }
+        return total / max;
+    } else { // Tiled noise
+        float w = z;
+        if (repeaty != FLT_MAX) {
+            float yf = y * 2.0 / repeaty;
+            float yr = repeaty * M_1_PI * 0.5;
+            float vy = fast_sin(yf);
+            float vyz = fast_cos(yf);
+            y = vy * yr;
+            w += vyz * yr;
+            if (repeatx == FLT_MAX) {
+                return fbm_noise3(x, y, w, octaves, persistence, lacunarity);
+            }
+        }
+        if (repeatx != FLT_MAX) {
+            float xf = x * 2.0 / repeatx;
+            float xr = repeatx * M_1_PI * 0.5;
+            float vx = fast_sin(xf);
+            float vxz = fast_cos(xf);
+            x = vx * xr;
+            z += vxz * xr;
+            if (repeaty == FLT_MAX) {
+                return fbm_noise3(x, y, z, octaves, persistence, lacunarity);
+            }
+        }
+        return fbm_noise4(x, y, z, w, octaves, persistence, lacunarity);
+    }
+}
+
+static float
+dispatch_noise3(float x, float y, float z, int octaves, float persistence,
+                float lacunarity)
 {
     if (octaves == 1) {
         // Single octave, return simple noise
@@ -271,7 +319,7 @@ dispatch_noise3(float x, float y, float z, int octaves, float persistence, float
 static PyObject *
 py_noise2(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    float x, y;
+    float x, y, retval;
     int octaves = 1;
     float persistence = 0.5f;
     float lacunarity = 2.0f;
@@ -290,50 +338,9 @@ py_noise2(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    if (repeatx == FLT_MAX && repeaty == FLT_MAX) {
-        // Flat noise, no tiling
-        float freq = 1.0f;
-        float amp = 1.0f;
-        float max = 1.0f;
-        float total = noise2(x + z, y + z);
-        int i;
-
-        for (i = 1; i < octaves; i++) {
-            freq *= lacunarity;
-            amp *= persistence;
-            max += amp;
-            total += noise2(x * freq + z, y * freq + z) * amp;
-        }
-        return (PyObject *) PyFloat_FromDouble((double) (total / max));
-    } else { // Tiled noise
-        float w = z;
-        if (repeaty != FLT_MAX) {
-            float yf = y * 2.0 / repeaty;
-            float yr = repeaty * M_1_PI * 0.5;
-            float vy = fast_sin(yf);
-            float vyz = fast_cos(yf);
-            y = vy * yr;
-            w += vyz * yr;
-            if (repeatx == FLT_MAX) {
-                return (PyObject *) PyFloat_FromDouble(
-                    (double) fbm_noise3(x, y, w, octaves, persistence, lacunarity));
-            }
-        }
-        if (repeatx != FLT_MAX) {
-            float xf = x * 2.0 / repeatx;
-            float xr = repeatx * M_1_PI * 0.5;
-            float vx = fast_sin(xf);
-            float vxz = fast_cos(xf);
-            x = vx * xr;
-            z += vxz * xr;
-            if (repeaty == FLT_MAX) {
-                return (PyObject *) PyFloat_FromDouble(
-                    (double) fbm_noise3(x, y, z, octaves, persistence, lacunarity));
-            }
-        }
-        return (PyObject *) PyFloat_FromDouble(
-            (double) fbm_noise4(x, y, z, w, octaves, persistence, lacunarity));
-    }
+    retval = dispatch_noise2(x, y, octaves, persistence, lacunarity,
+                             repeatx, repeaty, z);
+    return (PyObject *) PyFloat_FromDouble((double) retval);
 }
 
 static PyObject *
