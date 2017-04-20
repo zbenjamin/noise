@@ -316,6 +316,19 @@ dispatch_noise3(float x, float y, float z, int octaves, float persistence,
 	}
 }
 
+static float
+dispatch_noise4(float x, float y, float z, float w, int octaves,
+				float persistence, float lacunarity)
+{
+	if (octaves == 1) {
+		// Single octave, return simple noise
+		return noise4(x, y, z, w);
+	} else {
+		// octaves > 1, since we already checked for <= 0
+		return fbm_noise4(x, y, z, w, octaves, persistence, lacunarity);
+	}
+}
+
 static PyObject *
 py_noise2(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -369,7 +382,7 @@ py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 py_noise4(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-	float x, y, z, w;
+	float x, y, z, w, retval;
 	int octaves = 1;
 	float persistence = 0.5f;
 	float lacunarity = 2.0f;
@@ -380,16 +393,13 @@ py_noise4(PyObject *self, PyObject *args, PyObject *kwargs)
 		&x, &y, &z, &w, &octaves, &persistence))
 		return NULL;
 
-	if (octaves == 1) {
-		// Single octave, return simple noise
-		return (PyObject *) PyFloat_FromDouble((double) noise4(x, y, z, w));
-	} else if (octaves > 1) {
-		return (PyObject *) PyFloat_FromDouble(
-			(double) fbm_noise4(x, y, z, w, octaves, persistence, lacunarity));
-	} else {
+	if (octaves <= 0) {
 		PyErr_SetString(PyExc_ValueError, "Expected octaves value > 0");
 		return NULL;
 	}
+
+	retval = dispatch_noise4(x, y, z, w, octaves, persistence, lacunarity);
+	return (PyObject *) PyFloat_FromDouble((double) retval);
 }
 
 static PyObject *
