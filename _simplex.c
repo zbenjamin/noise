@@ -652,7 +652,7 @@ py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
         2.0f
     };
 
-    static char *kwlist[] = {"xs", "ys", "zs", "octaves", "persistence",
+    static char *kwlist[] = {"x", "y", "z", "octaves", "persistence",
                              "lacunarity", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOO|iff:snoise3",
