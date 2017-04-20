@@ -534,41 +534,38 @@ fail:
     return NULL;
 }
 
+#define SIMPLEX_COMMON_DOCS \
+    "octaves -- specifies the number of passes, defaults to 1 (simple noise).\n\n" \
+    "persistence -- specifies the amplitude of each successive octave relative\n" \
+    "to the one below it. Defaults to 0.5 (each higher octave's amplitude\n" \
+    "is halved). Note the amplitude of the first pass is always 1.0.\n\n" \
+    "lacunarity -- specifies the frequency of each successive octave relative\n" \
+    "to the one below it, similar to persistence. Defaults to 2.0."
+
 static PyMethodDef simplex_functions[] = {
     {"noise2", (PyCFunction)py_noise2, METH_VARARGS | METH_KEYWORDS,
         "noise2(x, y, octaves=1, persistence=0.5, lacunarity=2.0, repeatx=None, repeaty=None, base=0.0) "
         "return simplex noise value for specified 2D coordinate.\n\n"
-        "octaves -- specifies the number of passes, defaults to 1 (simple noise).\n\n"
-        "persistence -- specifies the amplitude of each successive octave relative\n"
-        "to the one below it. Defaults to 0.5 (each higher octave's amplitude\n"
-        "is halved). Note the amplitude of the first pass is always 1.0.\n\n"
-        "lacunarity -- specifies the frequency of each successive octave relative\n"
-        "to the one below it, similar to persistence. Defaults to 2.0.\n\n"
         "repeatx, repeaty -- specifies the interval along each axis when \n"
         "the noise values repeat. This can be used as the tile size for creating \n"
         "tileable textures\n\n"
+        SIMPLEX_COMMON_DOCS "\n\n"
         "base -- specifies a fixed offset for the noise coordinates. Useful for\n"
         "generating different noise textures with the same repeat interval"},
     {"noise3", (PyCFunction)py_noise3, METH_VARARGS | METH_KEYWORDS,
         "noise3(x, y, z, octaves=1, persistence=0.5, lacunarity=2.0) return simplex noise value for "
         "specified 3D coordinate\n\n"
-        "octaves -- specifies the number of passes, defaults to 1 (simple noise).\n\n"
-        "persistence -- specifies the amplitude of each successive octave relative\n"
-        "to the one below it. Defaults to 0.5 (each higher octave's amplitude\n"
-        "is halved). Note the amplitude of the first pass is always 1.0.\n\n"
-        "lacunarity -- specifies the frequency of each successive octave relative\n"
-        "to the one below it, similar to persistence. Defaults to 2.0."},
+        SIMPLEX_COMMON_DOCS
+    },
     {"noise4", (PyCFunction)py_noise4, METH_VARARGS | METH_KEYWORDS,
         "noise4(x, y, z, w, octaves=1, persistence=0.5, lacunarity=2.0) return simplex noise value for "
         "specified 4D coordinate\n\n"
-        "octaves -- specifies the number of passes, defaults to 1 (simple noise).\n\n"
-        "persistence -- specifies the amplitude of each successive octave relative\n"
-        "to the one below it. Defaults to 0.5 (each higher octave's amplitude\n"
-        "is halved). Note the amplitude of the first pass is always 1.0.\n\n"
-        "lacunarity -- specifies the frequency of each successive octave relative\n"
-        "to the one below it, similar to persistence. Defaults to 2.0."},
+        SIMPLEX_COMMON_DOCS
+    },
     {NULL}
 };
+
+#undef SIMPLEX_COMMON_DOCS
 
 PyDoc_STRVAR(module_doc, "Native-code simplex noise functions");
 
