@@ -14,7 +14,7 @@
 typedef struct _NoiseArgs NoiseArgs;
 
 typedef PyObject* (*ScalarFunc)(NoiseArgs* args);
-typedef float (*DispatchFunc)(NoiseArgs* args, char **coord);
+typedef float (*DispatchFunc)(NoiseArgs* args, float **coord);
 
 typedef struct _NoiseArgs {
     int ndims;
@@ -357,30 +357,30 @@ dispatch_noise4(float x, float y, float z, float w, int octaves,
 }
 
 static float
-dispatch_noise2_args(NoiseArgs *args, char **coord)
+dispatch_noise2_args(NoiseArgs *args, float **coord)
 {
-    return dispatch_noise2(*((float*) coord[0]),
-                           *((float*) coord[1]),
+    return dispatch_noise2(*coord[0],
+                           *coord[1],
                            args->octaves, args->persistence, args->lacunarity,
                            args->repeatx, args->repeaty, args->z);
 }
 
 static float
-dispatch_noise3_args(NoiseArgs *args, char **coord)
+dispatch_noise3_args(NoiseArgs *args, float **coord)
 {
-    return dispatch_noise3(*((float*) coord[0]),
-                           *((float*) coord[1]),
-                           *((float*) coord[2]),
+    return dispatch_noise3(*coord[0],
+                           *coord[1],
+                           *coord[2],
                            args->octaves, args->persistence, args->lacunarity);
 }
 
 static float
-dispatch_noise4_args(NoiseArgs *args, char **coord)
+dispatch_noise4_args(NoiseArgs *args, float **coord)
 {
-    return dispatch_noise4(*((float*) coord[0]),
-                           *((float*) coord[1]),
-                           *((float*) coord[2]),
-                           *((float*) coord[3]),
+    return dispatch_noise4(*coord[0],
+                           *coord[1],
+                           *coord[2],
+                           *coord[3],
                            args->octaves, args->persistence, args->lacunarity);
 }
 
@@ -559,7 +559,7 @@ py_noise_common(NoiseArgs* args)
 
         while (size--) {
             result = (float*) dataptrarray[args->nops - 1];
-            *result = args->dispatch_func(args, dataptrarray);
+            *result = args->dispatch_func(args, (float**) dataptrarray);
             for (iop = 0; iop < args->nops; ++iop) {
                 dataptrarray[iop] += strides[iop];
             }
