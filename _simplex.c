@@ -416,6 +416,31 @@ fail_x:
     return result;
 }
 
+static inline int
+_noise_common_init(int op_len, PyArrayObject **op, npy_uint32 *op_flags,
+                   PyArray_Descr **op_dtypes, PyArray_Descr *float_type,
+                   PyObject** coords)
+{
+    static char *var_names[4] = {"xs", "ys", "zs", "ws"};
+
+    for (int i = 0; i < op_len - 1; i++) {
+        op[i] = (PyArrayObject*) PyArray_FROM_O(coords[i]);
+        if (op[i] == NULL) {
+            PyErr_Format(PyExc_ValueError,
+                         "Could not convert argument `%s` to an array of floats",
+                         var_names[i]);
+            return -1;
+        }
+        op_flags[i] = NPY_ITER_READONLY;
+        op_dtypes[i] = float_type;
+    }
+    op[op_len] = NULL;
+    op_flags[op_len] = NPY_ITER_WRITEONLY | NPY_ITER_ALLOCATE;
+    op_dtypes[op_len] = float_type;
+
+    return 0;
+}
+
 static PyObject *
 py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -443,6 +468,8 @@ py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
                                      &lacunarity))
         goto fail;
 
+    PyObject* coords[3] = {xs, ys, zs};
+
     if (octaves <= 0) {
         PyErr_SetString(PyExc_ValueError, "Expected octaves value > 0");
         return NULL;
@@ -454,32 +481,9 @@ py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
         return noise3_scalar(xs, ys, zs, octaves, persistence, lacunarity);
     }
 
-    op[0] = (PyArrayObject*) PyArray_FROM_O(xs);
-    op[1] = (PyArrayObject*) PyArray_FROM_O(ys);
-    op[2] = (PyArrayObject*) PyArray_FROM_O(zs);
-    op[3] = NULL;
-    op_flags[0] = NPY_ITER_READONLY;
-    op_flags[1] = NPY_ITER_READONLY;
-    op_flags[2] = NPY_ITER_READONLY;
-    op_flags[3] = NPY_ITER_WRITEONLY | NPY_ITER_ALLOCATE;
     float_type = PyArray_DescrFromType(NPY_FLOAT);
-    op_dtypes[0] = float_type;
-    op_dtypes[1] = float_type;
-    op_dtypes[2] = float_type;
-    op_dtypes[3] = float_type;
-
-    if (op[0] == NULL) {
-        PyErr_SetString(PyExc_ValueError, "Could not convert argument `xs` to an array of floats");
+    if (_noise_common_init(3, op, op_flags, op_dtypes, float_type, coords) < 0)
         goto fail;
-    }
-    if (op[1] == NULL) {
-        PyErr_SetString(PyExc_ValueError, "Could not convert argument `ys` to an array of floats");
-        goto fail;
-    }
-    if (op[2] == NULL) {
-        PyErr_SetString(PyExc_ValueError, "Could not convert argument `zs` to an array of floats");
-        goto fail;
-    }
 
     iter = NpyIter_MultiNew(4, op, NPY_ITER_EXTERNAL_LOOP | NPY_ITER_BUFFERED,
                             NPY_KEEPORDER, NPY_SAME_KIND_CASTING,
