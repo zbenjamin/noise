@@ -357,29 +357,6 @@ py_noise2(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
-py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-	float x, y, z, retval;
-	int octaves = 1;
-	float persistence = 0.5f;
-	float lacunarity = 2.0f;
-
-	static char *kwlist[] = {"x", "y", "z", "octaves", "persistence", "lacunarity", NULL};
-
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "fff|iff:snoise3", kwlist,
-		&x, &y, &z, &octaves, &persistence, &lacunarity))
-		return NULL;
-
-	if (octaves <= 0) {
-		PyErr_SetString(PyExc_ValueError, "Expected octaves value > 0");
-		return NULL;
-	}
-
-	retval = dispatch_noise3(x, y, z, octaves, persistence, lacunarity);
-	return (PyObject *) PyFloat_FromDouble((double) retval);
-}
-
-static PyObject *
 py_noise4(PyObject *self, PyObject *args, PyObject *kwargs)
 {
 	float x, y, z, w, retval;
@@ -440,7 +417,7 @@ fail_x:
 }
 
 static PyObject *
-py_noise3_vec(PyObject *self, PyObject *args, PyObject *kwargs)
+py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
 {
 	PyObject* xs;
 	PyObject* ys;
@@ -557,55 +534,6 @@ fail:
 	return NULL;
 }
 
-static PyObject *
-py_noise3_coords(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-	PyObject* retvals;
-	PyObject* coords;
-	PyObject* coords_list;
-	PyObject** coords_items;
-	Py_ssize_t num_coords;
-	int octaves = 1;
-	float persistence = 0.5f;
-	float lacunarity = 2.0f;
-
-	static char *kwlist[] = {"coords", "octaves", "persistence", "lacunarity", NULL};
-
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iff:snoise3_coords",
-									 kwlist, &coords, &octaves, &persistence,
-									 &lacunarity))
-		return NULL;
-
-	// TODO: Check coords type
-	coords_list = PySequence_Fast(coords, "coords argument must support iteration");
-	coords_items = PySequence_Fast_ITEMS(coords_list);
-	num_coords = PySequence_Fast_GET_SIZE(coords_list);
-	retvals = PyList_New(num_coords);
-
-	if (octaves == 1) {
-		Py_ssize_t i;
-		for (i = 0; i < num_coords; ++i) {
-			PyObject* elem = coords_items[i];
-			PyObject* elem_list = PySequence_Fast(elem, "elements of coords argument must support iteration");
-			float x, y, z;
-			// TODO: Check length of elements
-			x = PyFloat_AS_DOUBLE(PySequence_Fast_GET_ITEM(elem_list, 0));
-			y = PyFloat_AS_DOUBLE(PySequence_Fast_GET_ITEM(elem_list, 1));
-			z = PyFloat_AS_DOUBLE(PySequence_Fast_GET_ITEM(elem_list, 2));
-			double result = (double) noise3(x, y, z);
-			PyList_SET_ITEM(retvals, i, PyFloat_FromDouble(result));
-		}
-		// Single octave, return simple noise
-		return retvals;
-	/* } else if (octaves > 1) { */
-	/* 	return (PyObject *) PyFloat_FromDouble( */
-	/* 		(double) fbm_noise3(x, y, z, octaves, persistence, lacunarity)); */
-	} else {
-		PyErr_SetString(PyExc_ValueError, "Expected octaves value > 0");
-		return NULL;
-	}
-}
-
 static PyMethodDef simplex_functions[] = {
 	{"noise2", (PyCFunction)py_noise2, METH_VARARGS | METH_KEYWORDS,
 		"noise2(x, y, octaves=1, persistence=0.5, lacunarity=2.0, repeatx=None, repeaty=None, base=0.0) "
@@ -639,9 +567,6 @@ static PyMethodDef simplex_functions[] = {
 		"is halved). Note the amplitude of the first pass is always 1.0.\n\n"
         "lacunarity -- specifies the frequency of each successive octave relative\n"
         "to the one below it, similar to persistence. Defaults to 2.0."},
-	// TODO: docs
-	{"noise3_coords", (PyCFunction)py_noise3_coords, METH_VARARGS | METH_KEYWORDS},
-	{"noise3_vec", (PyCFunction)py_noise3_vec, METH_VARARGS | METH_KEYWORDS},
 	{NULL}
 };
 
