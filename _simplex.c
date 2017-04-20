@@ -357,11 +357,30 @@ dispatch_noise4(float x, float y, float z, float w, int octaves,
 }
 
 static float
+dispatch_noise2_args(NoiseArgs *args, char **coord)
+{
+    return dispatch_noise2(*((float*) coord[0]),
+                           *((float*) coord[1]),
+                           args->octaves, args->persistence, args->lacunarity,
+                           args->repeatx, args->repeaty, args->z);
+}
+
+static float
 dispatch_noise3_args(NoiseArgs *args, char **coord)
 {
     return dispatch_noise3(*((float*) coord[0]),
                            *((float*) coord[1]),
                            *((float*) coord[2]),
+                           args->octaves, args->persistence, args->lacunarity);
+}
+
+static float
+dispatch_noise4_args(NoiseArgs *args, char **coord)
+{
+    return dispatch_noise4(*((float*) coord[0]),
+                           *((float*) coord[1]),
+                           *((float*) coord[2]),
+                           *((float*) coord[3]),
                            args->octaves, args->persistence, args->lacunarity);
 }
 
@@ -416,27 +435,26 @@ py_noise4(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
-noise2_scalar(PyObject *x, PyObject *y,
-              int octaves, float persistence, float lacunarity,
-              float repeatx, float repeaty, float z)
+noise2_scalar(NoiseArgs *args)
 {
     PyObject* fx = NULL;
     PyObject* fy = NULL;
     PyObject* result = NULL;
     float fresult;
 
-    fx = PyNumber_Float(x);
+    fx = PyNumber_Float(args->dim_vals[0]);
     if (fx == NULL)
         goto fail_x;
 
-    fy = PyNumber_Float(y);
+    fy = PyNumber_Float(args->dim_vals[1]);
     if (fy == NULL)
         goto fail_y;
 
     fresult = dispatch_noise2((float) PyFloat_AsDouble(fx),
                               (float) PyFloat_AsDouble(fy),
-                              octaves, persistence, lacunarity,
-                              repeatx, repeaty, z);
+                              args->octaves, args->persistence,
+                              args->lacunarity,
+                              args->repeatx, args->repeaty, args->z);
     result = (PyObject*) PyFloat_FromDouble(fresult);
 
     Py_DECREF(fy);
@@ -484,8 +502,7 @@ fail_x:
 }
 
 static PyObject *
-noise4_scalar(PyObject *x, PyObject *y, PyObject *z, PyObject *w,
-              int octaves, float persistence, float lacunarity)
+noise4_scalar(NoiseArgs *args)
 {
     PyObject* fx = NULL;
     PyObject* fy = NULL;
@@ -494,19 +511,19 @@ noise4_scalar(PyObject *x, PyObject *y, PyObject *z, PyObject *w,
     PyObject* result = NULL;
     float fresult;
 
-    fx = PyNumber_Float(x);
+    fx = PyNumber_Float(args->dim_vals[0]);
     if (fx == NULL)
         goto fail_x;
 
-    fy = PyNumber_Float(y);
+    fy = PyNumber_Float(args->dim_vals[1]);
     if (fy == NULL)
         goto fail_y;
 
-    fz = PyNumber_Float(z);
+    fz = PyNumber_Float(args->dim_vals[2]);
     if (fz == NULL)
         goto fail_z;
 
-    fw = PyNumber_Float(w);
+    fw = PyNumber_Float(args->dim_vals[3]);
     if (fw == NULL)
         goto fail_w;
 
@@ -514,7 +531,8 @@ noise4_scalar(PyObject *x, PyObject *y, PyObject *z, PyObject *w,
                               (float) PyFloat_AsDouble(fy),
                               (float) PyFloat_AsDouble(fz),
                               (float) PyFloat_AsDouble(fw),
-                              octaves, persistence, lacunarity);
+                              args->octaves, args->persistence,
+                              args->lacunarity);
     result = (PyObject*) PyFloat_FromDouble(fresult);
 
     Py_DECREF(fw);
