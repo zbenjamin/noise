@@ -385,56 +385,6 @@ dispatch_noise4_args(NoiseArgs *args, char **coord)
 }
 
 static PyObject *
-py_noise2(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    float x, y, retval;
-    int octaves = 1;
-    float persistence = 0.5f;
-    float lacunarity = 2.0f;
-    float repeatx = FLT_MAX;
-    float repeaty = FLT_MAX;
-    float z = 0.0f;
-    static char *kwlist[] = {"x", "y", "octaves", "persistence", "lacunarity",
-        "repeatx", "repeaty", "base", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ff|ifffff:snoise2", kwlist,
-        &x, &y, &octaves, &persistence, &lacunarity, &repeatx, &repeaty, &z)) {
-        return NULL;
-    }
-    if (octaves <= 0) {
-        PyErr_SetString(PyExc_ValueError, "Expected octaves value > 0");
-        return NULL;
-    }
-
-    retval = dispatch_noise2(x, y, octaves, persistence, lacunarity,
-                             repeatx, repeaty, z);
-    return (PyObject *) PyFloat_FromDouble((double) retval);
-}
-
-static PyObject *
-py_noise4(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    float x, y, z, w, retval;
-    int octaves = 1;
-    float persistence = 0.5f;
-    float lacunarity = 2.0f;
-
-    static char *kwlist[] = {"x", "y", "z", "w", "octaves", "persistence", "lacunarity", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ffff|iff:snoise4", kwlist,
-        &x, &y, &z, &w, &octaves, &persistence))
-        return NULL;
-
-    if (octaves <= 0) {
-        PyErr_SetString(PyExc_ValueError, "Expected octaves value > 0");
-        return NULL;
-    }
-
-    retval = dispatch_noise4(x, y, z, w, octaves, persistence, lacunarity);
-    return (PyObject *) PyFloat_FromDouble((double) retval);
-}
-
-static PyObject *
 noise2_scalar(NoiseArgs *args)
 {
     PyObject* fx = NULL;
@@ -642,6 +592,45 @@ fail:
 }
 
 static PyObject *
+py_noise2(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject* dim_vals[2] = {NULL, NULL};
+    PyArrayObject *op[3] = {NULL, NULL, NULL};
+    npy_uint32 op_flags[3];
+    PyArray_Descr *op_dtypes[3];
+
+    NoiseArgs nargs = {
+        2,
+        3,
+        dim_vals,
+        op,
+        op_flags,
+        op_dtypes,
+        noise2_scalar,
+        dispatch_noise2_args,
+        1,
+        0.5f,
+        2.0f,
+        FLT_MAX,
+        FLT_MAX,
+        0.0f
+    };
+
+    static char *kwlist[] = {"x", "y", "octaves", "persistence", "lacunarity",
+                             "repeatx", "repeaty", "base", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|ifffff:snoise2",
+                                     kwlist,
+                                     &dim_vals[0], &dim_vals[1],
+                                     &nargs.octaves, &nargs.persistence,
+                                     &nargs.lacunarity, &nargs.repeatx,
+                                     &nargs.repeaty, &nargs.z))
+        return NULL;
+
+    return py_noise_common(&nargs);
+}
+
+static PyObject *
 py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject* dim_vals[3] = {NULL, NULL, NULL};
@@ -663,11 +652,48 @@ py_noise3(PyObject *self, PyObject *args, PyObject *kwargs)
         2.0f
     };
 
-    static char *kwlist[] = {"xs", "ys", "zs", "octaves", "persistence", "lacunarity", NULL};
+    static char *kwlist[] = {"xs", "ys", "zs", "octaves", "persistence",
+                             "lacunarity", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOO|iff:snoise3",
                                      kwlist,
                                      &dim_vals[0], &dim_vals[1], &dim_vals[2],
+                                     &nargs.octaves, &nargs.persistence,
+                                     &nargs.lacunarity))
+        return NULL;
+
+    return py_noise_common(&nargs);
+}
+
+static PyObject *
+py_noise4(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject* dim_vals[4] = {NULL, NULL, NULL, NULL};
+    PyArrayObject *op[5] = {NULL, NULL, NULL, NULL, NULL};
+    npy_uint32 op_flags[5];
+    PyArray_Descr *op_dtypes[5];
+
+    NoiseArgs nargs = {
+        4,
+        5,
+        dim_vals,
+        op,
+        op_flags,
+        op_dtypes,
+        noise4_scalar,
+        dispatch_noise4_args,
+        1,
+        0.5f,
+        2.0f
+    };
+
+    static char *kwlist[] = {"x", "y", "z", "w", "octaves", "persistence",
+                             "lacunarity", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOOO|iff:snoise4",
+                                     kwlist,
+                                     &dim_vals[0], &dim_vals[1], &dim_vals[2],
+                                     &dim_vals[3],
                                      &nargs.octaves, &nargs.persistence,
                                      &nargs.lacunarity))
         return NULL;
