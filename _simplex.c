@@ -380,8 +380,39 @@ py_noise4(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
-noise3_scalar(PyObject *x, PyObject *y, PyObject *z, int octaves,
-              float persistence, float lacunarity)
+noise2_scalar(PyObject *x, PyObject *y,
+              int octaves, float persistence, float lacunarity,
+              float repeatx, float repeaty, float z)
+{
+    PyObject* fx = NULL;
+    PyObject* fy = NULL;
+    PyObject* result = NULL;
+    float fresult;
+
+    fx = PyNumber_Float(x);
+    if (fx == NULL)
+        goto fail_x;
+
+    fy = PyNumber_Float(y);
+    if (fy == NULL)
+        goto fail_y;
+
+    fresult = dispatch_noise2((float) PyFloat_AsDouble(fx),
+                              (float) PyFloat_AsDouble(fy),
+                              octaves, persistence, lacunarity,
+                              repeatx, repeaty, z);
+    result = (PyObject*) PyFloat_FromDouble(fresult);
+
+    Py_DECREF(fy);
+fail_y:
+    Py_DECREF(fx);
+fail_x:
+    return result;
+}
+
+static PyObject *
+noise3_scalar(PyObject *x, PyObject *y, PyObject *z,
+              int octaves, float persistence, float lacunarity)
 {
     PyObject* fx = NULL;
     PyObject* fy = NULL;
@@ -407,6 +438,51 @@ noise3_scalar(PyObject *x, PyObject *y, PyObject *z, int octaves,
                               octaves, persistence, lacunarity);
     result = (PyObject*) PyFloat_FromDouble(fresult);
 
+    Py_DECREF(fz);
+fail_z:
+    Py_DECREF(fy);
+fail_y:
+    Py_DECREF(fx);
+fail_x:
+    return result;
+}
+
+static PyObject *
+noise4_scalar(PyObject *x, PyObject *y, PyObject *z, PyObject *w,
+              int octaves, float persistence, float lacunarity)
+{
+    PyObject* fx = NULL;
+    PyObject* fy = NULL;
+    PyObject* fz = NULL;
+    PyObject* fw = NULL;
+    PyObject* result = NULL;
+    float fresult;
+
+    fx = PyNumber_Float(x);
+    if (fx == NULL)
+        goto fail_x;
+
+    fy = PyNumber_Float(y);
+    if (fy == NULL)
+        goto fail_y;
+
+    fz = PyNumber_Float(z);
+    if (fz == NULL)
+        goto fail_z;
+
+    fw = PyNumber_Float(w);
+    if (fw == NULL)
+        goto fail_w;
+
+    fresult = dispatch_noise4((float) PyFloat_AsDouble(fx),
+                              (float) PyFloat_AsDouble(fy),
+                              (float) PyFloat_AsDouble(fz),
+                              (float) PyFloat_AsDouble(fw),
+                              octaves, persistence, lacunarity);
+    result = (PyObject*) PyFloat_FromDouble(fresult);
+
+    Py_DECREF(fw);
+fail_w:
     Py_DECREF(fz);
 fail_z:
     Py_DECREF(fy);
