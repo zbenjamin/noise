@@ -386,6 +386,43 @@ py_noise4(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
+noise3_scalar(PyObject *x, PyObject *y, PyObject *z, int octaves,
+              float persistence, float lacunarity)
+{
+    PyObject* fx = NULL;
+    PyObject* fy = NULL;
+    PyObject* fz = NULL;
+    PyObject* result = NULL;
+    float fresult;
+
+    fx = PyNumber_Float(x);
+    if (fx == NULL)
+        goto fail_x;
+
+    fy = PyNumber_Float(y);
+    if (fy == NULL)
+        goto fail_y;
+
+    fz = PyNumber_Float(z);
+    if (fz == NULL)
+        goto fail_z;
+
+    fresult = dispatch_noise3((float) PyFloat_AsDouble(fx),
+                              (float) PyFloat_AsDouble(fy),
+                              (float) PyFloat_AsDouble(fz),
+                              octaves, persistence, lacunarity);
+    result = (PyObject*) PyFloat_FromDouble(fresult);
+
+    Py_DECREF(fz);
+fail_z:
+    Py_DECREF(fy);
+fail_y:
+    Py_DECREF(fx);
+fail_x:
+    return result;
+}
+
+static PyObject *
 py_noise3_vec(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject* xs;
@@ -415,6 +452,12 @@ py_noise3_vec(PyObject *self, PyObject *args, PyObject *kwargs)
     if (octaves <= 0) {
         PyErr_SetString(PyExc_ValueError, "Expected octaves value > 0");
         return NULL;
+    }
+
+    if (PyArray_IsPythonScalar(xs) && PyArray_IsPythonScalar(ys)
+        && PyArray_IsPythonScalar(zs))
+    {
+        return noise3_scalar(xs, ys, zs, octaves, persistence, lacunarity);
     }
 
     op[0] = (PyArrayObject*) PyArray_FROM_O(xs);
