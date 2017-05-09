@@ -5,6 +5,7 @@ fBm capabilities) and Perlin simplex noise. Also contains a fast
 "fake noise" implementation in GLSL for execution in shaders.
 
 Copyright (c) 2008, Casey Duncan (casey dot duncan at gmail dot com)
+Copyright (c) 2017, Zev Benjamin <zev@strangersgate.com>
 """
 
 __version__ = "1.0.0"
