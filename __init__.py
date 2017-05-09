@@ -8,7 +8,7 @@ Copyright (c) 2008, Casey Duncan (casey dot duncan at gmail dot com)
 Copyright (c) 2017, Zev Benjamin <zev@strangersgate.com>
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 from . import _perlin, _simplex
 
