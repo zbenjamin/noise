@@ -12,7 +12,7 @@ else:
 
 setup(
     name='vec_noise',
-    version='1.1.0',
+    version='1.1.1',
     description='Vectorized Perlin noise for Python',
     long_description='''\
 This is a fork of Casey Duncan's noise library that vectorizes all of the noise

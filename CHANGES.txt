@@ -1,3 +1,7 @@
+1.1.1 -- May 8, 2017
+
+  - Dummy version for re-upload to PyPI
+
 1.1.0 -- May 8, 2017
 
   - Add vectorized versions of the simplex noise functions
