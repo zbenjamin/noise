@@ -502,7 +502,7 @@ py_noise_common(NoiseArgs* args)
     static char *var_names[4] = {"xs", "ys", "zs", "ws"};
 
     int i;
-    int all_scalars = 0;
+    int all_scalars = 1;
     NpyIter *iter;
     NpyIter_IterNextFunc *iternext;
     PyArrayObject *ret = NULL;
@@ -516,7 +516,7 @@ py_noise_common(NoiseArgs* args)
     }
 
     for (i = 0; i < args->ndims; i++) {
-        all_scalars += PyArray_IsPythonScalar(args->dim_vals[i]);
+        all_scalars &= PyArray_IsPythonScalar(args->dim_vals[i]);
     }
     if (all_scalars)
         return args->scalar_func(args);
