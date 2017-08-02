@@ -750,19 +750,25 @@ static struct PyModuleDef moduledef = {
     NULL                /* m_free */
 };
 
-PyObject *
+PyMODINIT_FUNC
 PyInit__simplex(void)
 {
-    return PyModule_Create(&moduledef);
+    PyObject* ret = PyModule_Create(&moduledef);
+    if (! ret) {
+        return NULL;
+    }
+
+    import_array();
+    return ret;
 }
 
 #else
 
-void
+PyMODINIT_FUNC
 init_simplex(void)
 {
-    import_array();
     Py_InitModule3("_simplex", simplex_functions, module_doc);
+    import_array();
 }
 
 #endif
